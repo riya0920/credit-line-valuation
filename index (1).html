@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Line Valuation Demo</title>
+<meta name="description" content="Who should get a higher credit line? An interactive valuation demo on synthetic cardholders, with a test plan, by Riya Soni.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=DM+Serif+Display&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#FBF8F6; --card:#FFFFFF; --ink:#23202B; --ink-2:#55505E; --muted:#86808F;
+  --line:#E7E1E4; --grid:#EEE9EC; --accent:#8E4A63; --accent-soft:#F6EAEF;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --ref:#9A95A0;
+  --good:#1f7a4d; --bad:#b3413f;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#17151A; --card:#211E25; --ink:#F5F2F7; --ink-2:#C9C3CE; --muted:#9A94A1;
+    --line:#35303A; --grid:#2C2831; --accent:#E3A3BA; --accent-soft:#2E2229;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#7D7884;
+    --good:#5cc08c; --bad:#e67a78;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#17151A; --card:#211E25; --ink:#F5F2F7; --ink-2:#C9C3CE; --muted:#9A94A1;
+  --line:#35303A; --grid:#2C2831; --accent:#E3A3BA; --accent-soft:#2E2229;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#7D7884;
+  --good:#5cc08c; --bad:#e67a78;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque','Segoe UI',sans-serif;font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+header.hero{padding:72px 0 40px}
+.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:clamp(38px,6vw,62px);line-height:1.05;margin:14px 0 18px;letter-spacing:-.01em}
+h2{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:clamp(28px,4vw,38px);line-height:1.1;margin:0 0 14px}
+h3{font-size:18px;margin:0 0 6px;font-weight:600}
+.lede{font-family:'Newsreader',Georgia,serif;font-size:21px;color:var(--ink-2);max-width:720px;margin:0}
+.byline{margin-top:22px;font-size:15px;color:var(--muted)}
+.byline a,.prose a{color:var(--accent)}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.toc a{font-size:14px;color:var(--ink-2);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--card)}
+.toc a:hover{border-color:var(--accent);color:var(--accent)}
+section{padding:44px 0;border-top:1px solid var(--line)}
+p{margin:0 0 14px}
+.prose{max-width:720px;color:var(--ink-2)}
+.prose strong{color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.who{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.facts{display:grid;grid-template-columns:1fr auto;gap:4px 14px;font-size:15px;color:var(--ink-2);margin:10px 0 14px}
+.facts b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.math{border-top:1px dashed var(--line);padding-top:10px;margin-top:4px}
+.math .facts{margin:0}
+.verdict{font-size:26px;font-family:'DM Serif Display',Georgia,serif;font-variant-numeric:tabular-nums}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.small{font-size:14px;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:flex-end;margin:22px 0 16px}
+.ctl label,.ctl .lab{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.seg button{font:inherit;font-size:15px;border:0;background:transparent;color:var(--ink-2);padding:7px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{color:#17151A}
+@media (prefers-color-scheme: dark){:root:where(:not([data-theme="light"])) .seg button[aria-pressed="true"]{color:#17151A}}
+input[type=range]{width:220px;accent-color:var(--accent)}
+.val{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;margin-left:6px}
+.chartcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 10px;position:relative}
+.charttitle{font-size:15px;font-weight:600;margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--ink-2);margin:0 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend svg{flex:none}
+#chart{width:100%;height:auto;display:block;touch-action:none}
+.tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.08);min-width:210px;opacity:0;transition:opacity .1s;z-index:2}
+.tip .row{display:flex;justify-content:space-between;gap:16px;font-variant-numeric:tabular-nums}
+.tip .k{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.tile .name{font-size:14px;color:var(--ink-2);display:flex;align-items:center;gap:8px}
+.tile .num{font-family:'DM Serif Display',Georgia,serif;font-size:30px;font-variant-numeric:tabular-nums;margin-top:4px}
+.callout{margin-top:16px;background:var(--accent-soft);border-radius:14px;padding:16px 18px;color:var(--ink)}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--accent);font-size:15px}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:13px}
+th:first-child,td:first-child{text-align:left}
+td:first-child{color:var(--ink-2)}
+h3.sub{margin-top:30px}
+ol.steps,ul.list{padding-left:22px;color:var(--ink-2);max-width:760px}
+ol.steps li,ul.list li{margin-bottom:12px}
+ol.steps b,ul.list b{color:var(--ink)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.grid3 .card p{font-size:15px;color:var(--ink-2);margin:0}
+.kpi{font-family:'DM Serif Display',Georgia,serif;font-size:28px;color:var(--accent);margin-bottom:4px;font-variant-numeric:tabular-nums}
+.testgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.testgrid .card p{font-size:15px;color:var(--ink-2);margin:0}
+.testgrid .card h3{margin-bottom:8px}
+footer{padding:36px 0 60px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+footer a{color:var(--accent)}
+.theme{position:fixed;top:14px;right:14px;font:inherit;font-size:13px;background:var(--card);color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;z-index:5}
+@media (max-width:760px){
+  .two,.tiles,.grid3,.testgrid{grid-template-columns:1fr}
+  header.hero{padding:56px 0 28px}
+  input[type=range]{width:100%}
+  .ctl{width:100%}
+}
+</style>
+</head>
+<body>
+<button class="theme" id="themeBtn" type="button" aria-label="Toggle dark mode">Dark mode</button>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">A small valuation demo</div>
+  <h1>Who should get a higher credit line?</h1>
+  <p class="lede">A line increase is worth the extra balance it unlocks, minus the extra loss it risks. The customers where that difference is biggest are rarely the safest ones or the biggest spenders. This page shows why on 20,000 made-up cardholders, then lays out how I would test it for real.</p>
+  <div class="byline">By Riya Soni, data scientist · <a href="https://www.linkedin.com/in/riya-soni-ml-engineer/">LinkedIn</a> · <a href="https://github.com/riya0920">GitHub</a></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#pair-sec">Two customers</a><a href="#sim">Try three policies</a><a href="#test">How I would test it</a><a href="#plan">Build plan</a><a href="#limits">What it leaves out</a><a href="#built">What I have built</a>
+  </nav>
+</header>
+
+<section id="pair-sec">
+  <h2>Two customers, one decision</h2>
+  <p class="prose">Both customers are offered the same $1,000 increase. Customer A looks safer on paper. Customer B is the better decision, because she is close to her limit and will actually use the new room. Here is the arithmetic.</p>
+  <div class="two" id="pair"></div>
+  <p class="small" style="margin-top:12px">The change in expected loss covers everything she owes, including her current balance, because a bigger line can nudge her default risk up. Assumptions are listed further down.</p>
+</section>
+
+<section id="sim">
+  <h2>Try three ways to choose</h2>
+  <p class="prose">Each policy ranks all 20,000 cardholders and gives increases from the top of its list down. <strong>Low risk first</strong> ranks by default probability. <strong>High balance first</strong> ranks by how much people owe today. <strong>Value model</strong> ranks by an estimate of each person’s incremental value, the way an uplift model would. The gray line is perfect foresight, the ceiling for any policy. Readers who know uplift modeling will recognize this as a Qini-style curve in dollars.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lab" id="sizeLab">Increase size</span>
+      <div class="seg" role="group" aria-labelledby="sizeLab" id="sizeSeg">
+        <button type="button" data-v="500" aria-pressed="false">$500</button>
+        <button type="button" data-v="1000" aria-pressed="true">$1,000</button>
+        <button type="button" data-v="2500" aria-pressed="false">$2,500</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="lab" id="ecoLab">Economy</span>
+      <div class="seg" role="group" aria-labelledby="ecoLab" id="ecoSeg">
+        <button type="button" data-v="1" aria-pressed="true">Normal</button>
+        <button type="button" data-v="1.6" aria-pressed="false">Stress</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="q">Value model accuracy <span class="val" id="qv">70%</span></label>
+      <input id="q" type="range" min="0" max="100" value="70">
+    </div>
+    <div class="ctl">
+      <label for="k">Share given an increase <span class="val" id="kv">30%</span></label>
+      <input id="k" type="range" min="1" max="100" value="30">
+    </div>
+  </div>
+
+  <div class="chartcard">
+    <div class="charttitle">Total 12-month value across all 20,000 cardholders</div>
+    <div class="legend" id="legend"></div>
+    <svg id="chart" viewBox="0 0 900 420" role="img" aria-label="Cumulative 12-month value by share of cardholders given an increase, for each policy"></svg>
+    <div class="tip" id="tip"></div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="callout" id="callout"></div>
+
+  <h3 class="sub">Who each policy picks</h3>
+  <p class="prose" style="margin-bottom:0">This is where the difference comes from. Averages over the customers each policy selects, at the share chosen above.</p>
+  <div class="tblwrap"><table id="mix"></table></div>
+
+  <details>
+    <summary>Show the curve as a table</summary>
+    <div class="tblwrap"><table id="tbl"></table></div>
+  </details>
+</section>
+
+<section id="test">
+  <h2>How I would test it</h2>
+  <p class="prose">The chart cheats: it knows each person’s true value. Real data only shows what happened to people who got an increase, and past increases were chosen by an older policy, so comparing past recipients to everyone else mixes the effect of the increase with the effect of who was picked. The clean fix is a randomized test.</p>
+  <div class="testgrid">
+    <div class="card"><h3>Design</h3><p>Among customers who already pass ability-to-pay and policy checks, randomly give the increase to one group and hold out a matching group. Randomize by account and keep the holdout stable for the whole readout.</p></div>
+    <div class="card"><h3>Primary metric</h3><p>Incremental 12-month profit per account, test minus holdout: revenue on the extra balance, minus the change in charge-offs, minus cost.</p></div>
+    <div class="card"><h3>Guardrails</h3><p>30+ day delinquency, charge-off rate, payment rate, and complaints. A pre-agreed stop rule if test-group delinquency runs above the holdout by more than a set margin.</p></div>
+    <div class="card"><h3>Readouts</h3><p>Losses take months to show, so read early signals first: usage of the new room at 60 days, then delinquency at 3 and 6 months, with the final call on 12-month losses.</p></div>
+  </div>
+  <div class="callout" id="power"></div>
+</section>
+
+<section id="plan">
+  <h2>Build plan</h2>
+  <ol class="steps">
+    <li><b>Run the randomized test first.</b> It gives unbiased training labels and the yardstick every later model is judged against. It is how I tested every messaging rule at my current job.</li>
+    <li><b>Model the two sides separately.</b> One model for the extra balance an increase unlocks, one for the change in default risk and loss. Value is revenue minus loss minus cost, so each piece can be checked, explained, and recalibrated on its own.</li>
+    <li><b>Rank by value and stop where it turns negative.</b> The stopping point comes out of the curve, and leadership can move it to match risk appetite. The stress view above shows how much that point should shrink in a downturn.</li>
+    <li><b>Put the checks in front of the model.</b> Ability-to-pay rules first, then a fair-lending review of who gets increases, then reason codes a customer and a model reviewer can read.</li>
+    <li><b>Monitor by vintage.</b> Track each month’s increases against what the model promised, with drift alarms on the inputs, a small ongoing holdout to keep measuring lift, and a kill switch back to the previous policy.</li>
+  </ol>
+</section>
+
+<section id="limits">
+  <h2>What this demo leaves out</h2>
+  <ul class="list">
+    <li><b>Only 12 months.</b> Card losses often peak after the first year, and a longer horizon also adds retention value. The horizon choice can change who ranks on top.</li>
+    <li><b>No capital, reserve, or funding detail.</b> Funding is folded into a flat margin.</li>
+    <li><b>Fixed behavior.</b> How much of the new room people use is held constant. In reality it shifts with season, the economy, and how the increase is presented.</li>
+    <li><b>Checks are described, not simulated.</b> Ability-to-pay and fair-lending reviews appear in the plan and are absent from the numbers.</li>
+    <li><b>Made-up relationships.</b> The links between usage, balance, and risk are my assumptions. A real version would estimate them from the randomized test.</li>
+  </ul>
+  <details>
+    <summary>Show every assumption</summary>
+    <div class="tblwrap"><table>
+      <tr><th>Assumption</th><th>Value</th></tr>
+      <tr><td>Margin on extra balance, customers who carry a balance</td><td>14% a year</td></tr>
+      <tr><td>Margin on extra spend, customers who pay in full</td><td>3% a year</td></tr>
+      <tr><td>Loss given default</td><td>85%</td></tr>
+      <tr><td>Share of the new line drawn by the time of default</td><td>80%</td></tr>
+      <tr><td>Rise in default probability</td><td>8% × share of new room used, per $1,000</td></tr>
+      <tr><td>Cost per increase</td><td>$3</td></tr>
+      <tr><td>Stress scenario</td><td>All default probabilities × 1.6</td></tr>
+      <tr><td>Value model accuracy</td><td>Estimate = true value + noise, noise shrinks as accuracy rises</td></tr>
+    </table></div>
+  </details>
+</section>
+
+<section id="built">
+  <h2>What I have already built</h2>
+  <div class="grid3">
+    <div class="card"><div class="kpi">20–40%</div><h3>Uplift model in production</h3><p>A LightGBM model, trained against a randomized holdout, that sends one more text message only where the incremental profit is positive. It beat the flat rule on net profit per extra message.</p></div>
+    <div class="card"><div class="kpi">WoE + LGBM</div><h3>Credit risk scorecard</h3><p>A points-based scorecard with a LightGBM challenger, reject inference checked against hidden outcomes, booking vintages, adverse-action reason codes, and a fair-lending check on public HMDA data.</p></div>
+    <div class="card"><div class="kpi">Kill switch</div><h3>Policy service with guardrails</h3><p>Took a value-based messaging policy to production across 11 sending numbers with drift monitoring, Slack alerts, and a one-step rollback to the old policy.</p></div>
+  </div>
+</section>
+
+<footer>
+  All data on this page is synthetic and generated in your browser. The model is deliberately simple and every number is illustrative. This is an independent project and is not affiliated with or endorsed by any bank.<br><br>
+  Riya Soni · <a href="mailto:riyaasoni2001@gmail.com">riyaasoni2001@gmail.com</a> · <a href="https://www.linkedin.com/in/riya-soni-ml-engineer/">LinkedIn</a> · <a href="https://github.com/riya0920">GitHub</a>
+</footer>
+</div>
+
+<script>
+(function(){
+  // ---------- seeded random ----------
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  function normal(r){let u=0,v=0;while(u===0)u=r();while(v===0)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const sig=x=>1/(1+Math.exp(-x));
+
+  // ---------- economics (12 months) ----------
+  const LGD=0.85, OPS=3, DRAW=0.8;
+  let L=1000, ECO=1, Q=0.7, K=0.30;
+  function parts(c,L,eco){
+    const margin = c.rev ? 0.14 : 0.03;
+    const revenue = c.u*L*margin;
+    const pd0 = Math.min(0.6, c.pd*eco);
+    const pd1 = Math.min(0.6, pd0*(1+0.08*c.u*(L/1000)));
+    const loss = LGD*(pd1*(c.bal+DRAW*L) - pd0*c.bal);
+    return {revenue, loss, pd0, pd1, margin, value: revenue - loss - OPS};
+  }
+  const valueOf=(c)=>parts(c,L,ECO).value;
+
+  // ---------- synthetic population ----------
+  const N=20000;
+  const rnd=mulberry32(20260928);
+  const pop=[];
+  for(let i=0;i<N;i++){
+    const U = clamp(sig(normal(rnd)*1.3 - 0.4),0.01,0.99);
+    const pd = clamp(sig(Math.log(0.025/0.975) + 1.6*(U-0.35) + normal(rnd)*0.8),0.002,0.35);
+    const lim = Math.round((2000 + rnd()*13000)/100)*100;
+    const bal = U*lim;
+    const rev = rnd() < sig(-2+5*U);
+    const u = clamp((0.03 + 0.55*Math.pow(U,1.3) + normal(rnd)*0.05)*(rev?1:0.4),0,0.9);
+    pop.push({U,pd,lim,bal,rev,u,noise:normal(rnd)});
+  }
+
+  // ---------- two example customers ----------
+  const A={pd:0.012,U:0.08,lim:9000,bal:720,rev:false,u:0.02};
+  const B={pd:0.030,U:0.78,lim:6000,bal:4680,rev:true,u:0.43};
+  const sgn=v=>(v<0?'−':'+')+'$'+Math.abs(v).toFixed(0);
+  function pairCard(c,title,desc){
+    const p=parts(c,1000,1);
+    return `<div class="card"><div class="who">${title}</div><h3>${desc}</h3>
+      <div class="facts"><span>Default probability</span><b>${(c.pd*100).toFixed(1)}%</b>
+      <span>Share of her limit in use</span><b>${Math.round(c.U*100)}%</b>
+      <span>Carries a balance</span><b>${c.rev?'Yes':'No, pays in full'}</b>
+      <span>Share of the new $1,000 she uses</span><b>${Math.round(c.u*100)}%</b></div>
+      <div class="math"><div class="facts">
+      <span>Extra revenue</span><b>${sgn(p.revenue)}</b>
+      <span>Change in expected loss</span><b>${sgn(-p.loss)}</b>
+      <span>Cost of the increase</span><b>${sgn(-OPS)}</b></div></div>
+      <div class="small" style="margin-top:10px">12-month value of the increase</div>
+      <div class="verdict ${p.value>=0?'pos':'neg'}">${sgn(p.value)}</div></div>`;
+  }
+  document.getElementById('pair').innerHTML =
+    pairCard(A,'Customer A','Looks safe, rarely uses her card') +
+    pairCard(B,'Customer B','Riskier on paper, close to her limit');
+
+  // ---------- policies ----------
+  const S=[
+    {key:'value',name:'Value model',color:'var(--s1)',dash:''},
+    {key:'risk',name:'Low risk first',color:'var(--s2)',dash:'7 5'},
+    {key:'bal',name:'High balance first',color:'var(--s3)',dash:'2 4'},
+    {key:'best',name:'Perfect foresight',color:'var(--ref)',dash:'1 3',ref:true}
+  ];
+  const STEPS=100;
+  let curves={}, grid=[], orders={}, vals=[];
+
+  function compute(){
+    vals=pop.map(valueOf);
+    const mean=vals.reduce((a,b)=>a+b,0)/N;
+    const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)*(b-mean),0)/N);
+    const sigma=(1-Q)*2.5*sd;
+    const idx=[...Array(N).keys()];
+    orders={
+      value: idx.slice().sort((a,b)=>(vals[b]+pop[b].noise*sigma)-(vals[a]+pop[a].noise*sigma)),
+      risk:  idx.slice().sort((a,b)=>pop[a].pd-pop[b].pd),
+      bal:   idx.slice().sort((a,b)=>pop[b].bal-pop[a].bal),
+      best:  idx.slice().sort((a,b)=>vals[b]-vals[a])
+    };
+    grid=[];for(let s=0;s<=STEPS;s++)grid.push(s/STEPS);
+    curves={};
+    for(const k in orders){
+      const cum=[0];let run=0;const o=orders[k];
+      for(let i=0;i<N;i++){run+=vals[o[i]];cum.push(run)}
+      curves[k]=grid.map(p=>cum[Math.round(p*N)]);
+    }
+  }
+
+  // ---------- chart ----------
+  const svg=document.getElementById('chart'), tip=document.getElementById('tip');
+  let W=900,H=420,iw,ih;const m={l:70,r:28,t:16,b:48};
+  function size(){const cw=svg.parentElement.clientWidth;W=cw<600?440:900;H=cw<600?360:420;iw=W-m.l-m.r;ih=H-m.t-m.b;svg.setAttribute('viewBox',`0 0 ${W} ${H}`)}
+  const money=v=>{const a=Math.abs(v);const s=v<0?'−':'';return a>=1e6?s+'$'+(a/1e6).toFixed(2)+'M':a>=1e3?s+'$'+Math.round(a/1e3)+'K':s+'$'+Math.round(a)};
+  function niceTicks(lo,hi,n){const span=hi-lo;const step0=span/n;const mag=Math.pow(10,Math.floor(Math.log10(step0)));const f=step0/mag;const step=(f<1.5?1:f<3?2:f<7?5:10)*mag;const t=[];for(let v=Math.ceil(lo/step)*step;v<=hi+1e-9;v+=step)t.push(v);return t}
+  const peak=k=>{const c=curves[k];let bi=0;for(let i=1;i<c.length;i++)if(c[i]>c[bi])bi=i;return bi};
+
+  function draw(){
+    size();
+    let lo=0,hi=0;
+    for(const k in curves)for(const v of curves[k]){lo=Math.min(lo,v);hi=Math.max(hi,v)}
+    const pad=(hi-lo)*0.06;lo-=pad;hi+=pad;
+    const x=p=>m.l+p*iw, y=v=>m.t+(hi-v)/(hi-lo)*ih;
+    let h='';
+    for(const t of niceTicks(lo,hi,5)){
+      h+=`<line x1="${m.l}" x2="${m.l+iw}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/>`;
+      h+=`<text x="${m.l-10}" y="${y(t)+4}" text-anchor="end" font-size="13" fill="var(--muted)">${money(t)}</text>`;
+    }
+    h+=`<line x1="${m.l}" x2="${m.l+iw}" y1="${y(0)}" y2="${y(0)}" stroke="var(--muted)" stroke-width="1"/>`;
+    for(const p of [0,.25,.5,.75,1]) h+=`<text x="${x(p)}" y="${m.t+ih+22}" text-anchor="middle" font-size="13" fill="var(--muted)">${Math.round(p*100)}%</text>`;
+    h+=`<text x="${m.l+iw/2}" y="${H-6}" text-anchor="middle" font-size="13" fill="var(--ink-2)">Share of cardholders given an increase</text>`;
+    h+=`<line x1="${x(K)}" x2="${x(K)}" y1="${m.t}" y2="${m.t+ih}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+    for(const s of S){
+      const c=curves[s.key];
+      const d=c.map((v,i)=>(i?'L':'M')+x(grid[i]).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+      h+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.ref?2:2.5}" stroke-dasharray="${s.dash}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+    const bi=peak('value');const cv=curves.value;
+    if(cv[bi]>0){
+      h+=`<circle cx="${x(grid[bi])}" cy="${y(cv[bi])}" r="5" fill="var(--s1)" stroke="var(--card)" stroke-width="2"/>`;
+      h+=`<text x="${x(grid[bi])}" y="${y(cv[bi])-12}" text-anchor="middle" font-size="12.5" fill="var(--ink-2)">best stop ${Math.round(grid[bi]*100)}%</text>`;
+    }
+    h+=`<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t+ih}" stroke="var(--ink-2)" stroke-width="1" opacity="0"/>`;
+    h+=`<g id="hd"></g><rect id="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/>`;
+    svg.innerHTML=h;
+    const hit=svg.querySelector('#hit'), xh=svg.querySelector('#xh'), hd=svg.querySelector('#hd');
+    function move(ev){
+      const r=svg.getBoundingClientRect();const sx=(ev.clientX-r.left)/r.width*W;
+      const p=clamp((sx-m.l)/iw,0,1);const i=Math.round(p*STEPS);
+      xh.setAttribute('x1',x(grid[i]));xh.setAttribute('x2',x(grid[i]));xh.setAttribute('opacity','.5');
+      hd.innerHTML=S.map(s=>`<circle cx="${x(grid[i])}" cy="${y(curves[s.key][i])}" r="4.5" fill="${s.color}" stroke="var(--card)" stroke-width="2"/>`).join('');
+      tip.innerHTML=`<div style="font-weight:600;margin-bottom:6px">Top ${Math.round(grid[i]*100)}% get an increase</div>`+
+        S.map(s=>`<div class="row"><span class="k"><span class="dot" style="background:${s.color}"></span>${s.name}</span><span>${money(curves[s.key][i])}</span></div>`).join('');
+      const box=svg.parentElement.getBoundingClientRect();
+      const left=(x(grid[i])/W)*r.width + r.left - box.left + 14;
+      tip.style.left=(left+230>box.width? left-250 : left)+'px';
+      tip.style.top=Math.max(8,ev.clientY-box.top-20)+'px';tip.style.opacity=1;
+    }
+    hit.addEventListener('pointermove',move);hit.addEventListener('pointerdown',move);
+    hit.addEventListener('pointerleave',()=>{tip.style.opacity=0;xh.setAttribute('opacity','0');hd.innerHTML=''});
+  }
+
+  function legend(){
+    document.getElementById('legend').innerHTML=S.map(s=>`<span><svg width="30" height="10" aria-hidden="true"><line x1="1" x2="29" y1="5" y2="5" stroke="${s.color}" stroke-width="${s.ref?2:2.5}" stroke-dasharray="${s.dash}" stroke-linecap="round"/></svg>${s.name}</span>`).join('');
+  }
+
+  function tiles(){
+    const i=Math.round(K*STEPS);
+    const main=S.filter(s=>!s.ref);
+    document.getElementById('tiles').innerHTML=main.map(s=>`<div class="tile"><div class="name"><span class="dot" style="background:${s.color}"></span>${s.name}</div><div class="num ${curves[s.key][i]>=0?'':'neg'}">${money(curves[s.key][i])}</div><div class="small">12-month value, top ${Math.round(K*100)}%</div></div>`).join('');
+    const bi=peak('value');
+    const best=curves.best[i], got=curves.value[i];
+    const share = best>0 ? Math.round(got/best*100) : 0;
+    const vr = curves.value[i]-curves.risk[i];
+    const stop = curves.value[bi]>0
+      ? `Its curve peaks when the top <b>${Math.round(grid[bi]*100)}%</b> get an increase. Past that point, each extra increase loses money.`
+      : `In this setting no share makes money, so the right call is to give no increases.`;
+    const cmp = `the value model earns <b>${money(Math.abs(vr))} ${vr>=0?'more':'less'}</b> than giving increases to the lowest-risk customers`;
+    const tail = ` Switch the economy to Stress, or drop model accuracy, to see how the answer moves.`;
+    let msg;
+    if(got>0 && best>0){
+      msg = `At ${Math.round(K*100)}%, ${cmp}, and captures <b>${share}%</b> of what perfect foresight would. ${stop}`;
+    } else if(curves.value[bi]>0){
+      msg = `At ${Math.round(K*100)}%, every policy has gone past the point where increases pay off, and ${cmp}. The value model would stop at the top <b>${Math.round(grid[bi]*100)}%</b>, where it earns <b>${money(curves.value[bi])}</b>.`;
+    } else {
+      msg = `In this setting no share makes money, so the right call is to give no increases.`;
+    }
+    document.getElementById('callout').innerHTML = msg + tail;
+
+    // who each policy picks
+    const n=Math.max(1,Math.round(K*N));
+    const rows=[['Share of limit in use',c=>c.U,v=>Math.round(v*100)+'%'],
+                ['Default probability',c=>c.pd*ECO,v=>(v*100).toFixed(1)+'%'],
+                ['Carries a balance',c=>c.rev?1:0,v=>Math.round(v*100)+'%'],
+                ['Current balance',c=>c.bal,v=>'$'+Math.round(v).toLocaleString('en-US')]];
+    let t='<tr><th>Average over picks</th>'+main.map(s=>`<th>${s.name}</th>`).join('')+'</tr>';
+    for(const [lab,f,fmt] of rows){
+      t+=`<tr><td>${lab}</td>`+main.map(s=>{const o=orders[s.key];let a=0;for(let j=0;j<n;j++)a+=f(pop[o[j]]);return `<td>${fmt(a/n)}</td>`}).join('')+'</tr>';
+    }
+    t+='<tr><td>Picks that lose money</td>'+main.map(s=>{const o=orders[s.key];let a=0;for(let j=0;j<n;j++)if(vals[o[j]]<0)a++;return `<td>${Math.round(a/n*100)}%</td>`}).join('')+'</tr>';
+    document.getElementById('mix').innerHTML=t;
+
+    let tb='<tr><th>Share given an increase</th>'+S.map(s=>`<th>${s.name}</th>`).join('')+'</tr>';
+    for(let p=0;p<=100;p+=10){const j=p/100*STEPS;tb+=`<tr><td>${p}%</td>`+S.map(s=>`<td>${money(curves[s.key][j])}</td>`).join('')+'</tr>'}
+    document.getElementById('tbl').innerHTML=tb;
+  }
+
+  // ---------- test size ----------
+  function power(){
+    // Per-account profit in each arm is lumpy: most accounts earn a little, a few default on their whole balance.
+    let mT=0,sT=0,mC=0,sC=0;
+    for(const c of pop){
+      const p=parts(c,L,ECO);
+      const good=c.u*L*p.margin, badT=-LGD*(c.bal+DRAW*L), badC=-LGD*c.bal;
+      const eT=(1-p.pd1)*good+p.pd1*badT, e2T=(1-p.pd1)*good*good+p.pd1*badT*badT;
+      const eC=p.pd0*badC, e2C=p.pd0*badC*badC;
+      mT+=eT;sT+=e2T;mC+=eC;sC+=e2C;
+    }
+    mT/=N;mC/=N;const vT=sT/N-mT*mT, vC=sC/N-mC*mC;
+    const z=1.959964+0.841621, delta=10;
+    const n=Math.ceil(z*z*(vT+vC)/(delta*delta));
+    const sd=Math.sqrt((vT+vC)/2);
+    const fmtN=v=>v>=1e6?(v/1e6).toFixed(1)+' million':Math.round(v/1000).toLocaleString('en-US')+',000';
+    document.getElementById('power').innerHTML =
+      `<b>How big does the test need to be?</b> Per-account profit is lumpy: most accounts earn a few dollars and a few default on everything they owe, so it swings by about <b>$${Math.round(sd).toLocaleString('en-US')}</b> from account to account. To detect a $10 average lift with 80% power at the 5% level, each group needs roughly <b>${fmtN(n)} accounts</b> in this setting. That is why I would lean on early signals, use pre-period balance and risk score to reduce variance (the CUPED idea I used in my experimentation simulator), and pool results across monthly test cells.`;
+  }
+
+  function render(){compute();draw();tiles();power()}
+  let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(draw,120)});
+  legend();render();
+
+  function seg(id,fn){document.querySelectorAll(`#${id} button`).forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll(`#${id} button`).forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');fn(+b.dataset.v);render();}))}
+  seg('sizeSeg',v=>L=v); seg('ecoSeg',v=>ECO=v);
+  const q=document.getElementById('q'),k=document.getElementById('k');
+  q.addEventListener('input',()=>{Q=q.value/100;document.getElementById('qv').textContent=q.value+'%';render()});
+  k.addEventListener('input',()=>{K=k.value/100;document.getElementById('kv').textContent=k.value+'%';draw();tiles()});
+
+  const btn=document.getElementById('themeBtn');
+  const sysDark=()=>window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark=()=>{const t=document.documentElement.dataset.theme;return t?t==='dark':sysDark()};
+  const label=()=>btn.textContent=isDark()?'Light mode':'Dark mode';
+  label();
+  btn.addEventListener('click',()=>{document.documentElement.dataset.theme=isDark()?'light':'dark';label()});
+})();
+</script>
+</body>
+</html>
